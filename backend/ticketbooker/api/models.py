@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User  # Import User model
 
 # Create your models here.
 
@@ -34,3 +35,24 @@ class ShowTiming(models.Model):
             super().save(*args, **kwargs)
         else:
             raise ValueError("The movie is not available in the selected theatre.")
+
+class Contact_us(models.Model):
+    name = models.CharField(max_length=255)
+    email = models.EmailField(max_length=255)
+    phone = models.IntegerField()
+    subject = models.CharField(max_length=255)
+    message = models.TextField()
+    
+    def __str__(self):
+        return self.name
+
+class Payment(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    payment_intent_id = models.CharField(max_length=255)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    seats = models.JSONField()  # Store the list of booked seats
+    user_info = models.JSONField()  # Store user info (name, email, etc.)
+    status = models.CharField(max_length=50, default='pending')  # Payment status
+
+    def __str__(self):
+        return f"Payment for {self.user.username} - {self.payment_intent_id}"

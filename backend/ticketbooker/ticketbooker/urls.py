@@ -28,6 +28,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
     path('api/', include("api.urls")),
+    path('api/confirm-payment/', views.confirm_payment, name='confirm_payment'),
+
     # path('api/theatres/', views.theatre_list, name='theatre-list'),
     # path('api/showtimings/', views.show_timings_list, name='showtimings-list'),
     # path('api/register/', views.register, name='register'),

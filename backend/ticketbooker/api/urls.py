@@ -9,4 +9,6 @@ urlpatterns = [
     path('password-reset/', CustomPasswordResetAPI.as_view(), name='password_reset_api'),
     path('create-payment-intent/', create_payment_intent, name='create-payment-intent'),
     path('password-reset-confirm/', PasswordResetConfirmAPI.as_view(), name='password_reset_confirm'),
+    path('contact-us/', contact_us, name='contact_us'),
+    
 ]

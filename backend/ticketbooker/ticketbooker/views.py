@@ -167,3 +167,58 @@ def create_payment_intent(request):
         })
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=403)
+
+
+@api_view(["POST"])
+def contact_us(request):
+    name = request.data.get('name')
+    email = request.data.get('email')
+    phone = request.data.get('phone')
+    subject = request.data.get('subject')
+    message = request.data.get('message')
+    
+    contact=Contact_us(
+        name=name,
+        email=email,
+        phone=phone,
+        subject=subject,
+        message=message,
+    )
+    
+    contact.save()
+    
+    return Response({'success': 'Your Request is Received.'}, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+def confirm_payment(request):
+    try:
+        # Get the data from the request
+        payment_intent_id = request.data.get('paymentIntentId')
+        amount = request.data.get('amount')
+        seats = request.data.get('seats')
+        user_info = request.data.get('userInfo')
+        
+        # You can also validate the data here before proceeding further
+        if not payment_intent_id or not amount or not seats or not user_info:
+            return Response({'error': 'Missing required data'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Assuming that user_info contains name and email, find the user
+        user = User.objects.get(email=user_info.get('email'))
+
+        # Create a Payment record in the database
+        payment = Payment.objects.create(
+            user=user,
+            payment_intent_id=payment_intent_id,
+            amount=amount,
+            seats=seats,
+            user_info=user_info,
+            status='confirmed',  # Mark payment as confirmed
+        )
+        
+        # You can also handle further logic here, such as updating seat availability, etc.
+
+        return Response({'success': 'Payment confirmed successfully', 'payment_id': payment.payment_intent_id}, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
