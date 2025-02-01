@@ -50,9 +50,24 @@ class Payment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     payment_intent_id = models.CharField(max_length=255)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    seats = models.JSONField()  # Store the list of booked seats
-    user_info = models.JSONField()  # Store user info (name, email, etc.)
-    status = models.CharField(max_length=50, default='pending')  # Payment status
+    seats = models.JSONField()  # Assuming seats is a JSON field
+    user_info = models.JSONField()  # Store user information as JSON
+    movie_id = models.IntegerField()  # Add movie_id field
+    theatre_id = models.IntegerField()  # Add theatre_id field
+    show_timings_id = models.IntegerField()  # Add show_timings_id field
+    status = models.CharField(max_length=50, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"Payment for {self.user.username} - {self.payment_intent_id}"
+    
+class BookedSeat(models.Model):
+    seat_id = models.CharField(max_length=10)  # Example: A1, B2
+    show_timings_id = models.IntegerField()
+    movie_id = models.IntegerField()  # New field for movie ID
+    theatre_id = models.IntegerField()  # New field for theatre ID
+    booked = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Seat {self.seat_id} for movie {self.movie_id}, show {self.show_timings_id} at theatre {self.theatre_id} - {'Booked' if self.booked else 'Available'}"

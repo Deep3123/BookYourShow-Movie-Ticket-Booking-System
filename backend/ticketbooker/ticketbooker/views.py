@@ -192,33 +192,89 @@ def contact_us(request):
 
 @api_view(['POST'])
 def confirm_payment(request):
+    serializer = ConfirmPaymentSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response({'error': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+    
+    data = serializer.validated_data
     try:
-        # Get the data from the request
-        payment_intent_id = request.data.get('paymentIntentId')
-        amount = request.data.get('amount')
-        seats = request.data.get('seats')
-        user_info = request.data.get('userInfo')
-        
-        # You can also validate the data here before proceeding further
-        if not payment_intent_id or not amount or not seats or not user_info:
-            return Response({'error': 'Missing required data'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Assuming that user_info contains name and email, find the user
-        user = User.objects.get(email=user_info.get('email'))
-
-        # Create a Payment record in the database
+        user = User.objects.get(username=data['userInfo']['username'])
         payment = Payment.objects.create(
             user=user,
-            payment_intent_id=payment_intent_id,
-            amount=amount,
-            seats=seats,
-            user_info=user_info,
-            status='confirmed',  # Mark payment as confirmed
+            payment_intent_id=data['paymentIntentId'],
+            amount=data['amount'],
+            seats=data['seats'],
+            user_info=data['userInfo'],
+            movie_id=data['movieId'],
+            theatre_id=data['theatreId'],
+            show_timings_id=data['showTimingsId'],
+            status='confirmed',
         )
-        
-        # You can also handle further logic here, such as updating seat availability, etc.
+        # Update seat availability logic here
 
-        return Response({'success': 'Payment confirmed successfully', 'payment_id': payment.payment_intent_id}, status=status.HTTP_200_OK)
-
+        return Response({'success': 'Payment confirmed', 'payment_id': payment.payment_intent_id}, status=status.HTTP_200_OK)
+    except User.DoesNotExist:
+        return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+
+@api_view(['POST'])
+def book_seat(request):
+    show_timings_id = request.data.get('showTimingsId')
+    seat_ids = request.data.get('seatId')  # Now expecting a list of seats
+    movie_id = request.data.get('movieId')
+    theatre_id = request.data.get('theatreId')
+
+    if not all([show_timings_id, seat_ids, movie_id, theatre_id]):
+        return Response({'error': 'Missing required parameters'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    if not isinstance(seat_ids, list):
+        return Response({'error': 'seatId must be a list'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Check if any seat is already booked
+    already_booked = BookedSeat.objects.filter(
+        show_timings_id=show_timings_id,
+        seat_id__in=seat_ids,
+        movie_id=movie_id,
+        theatre_id=theatre_id,
+        booked=True
+    ).exists()
+
+    if already_booked:
+        return Response({'error': 'One or more seats are already booked'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Book all seats
+    BookedSeat.objects.bulk_create([
+        BookedSeat(
+            seat_id=seat,
+            show_timings_id=show_timings_id,
+            movie_id=movie_id,
+            theatre_id=theatre_id,
+            booked=True
+        ) for seat in seat_ids
+    ])
+
+    return Response({'message': 'Seats booked successfully'}, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def check_seat_availability(request):
+    movie_id = request.GET.get('movieId')
+    theatre_id = request.GET.get('theatreId')
+    show_timings_id = request.GET.get('showTimingsId') 
+    
+    if not all([movie_id, theatre_id, show_timings_id]):
+        return Response({'error': 'Missing required parameters'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Fetch booked seats for the given movie, theatre, and show timing
+    booked_seats = BookedSeat.objects.filter(
+        movie_id=movie_id,
+        theatre_id=theatre_id,
+        show_timings_id=show_timings_id,  # ✅ Ensure show timings are considered
+        booked=True
+    )
+    
+    booked_seat_ids = booked_seats.values_list('seat_id', flat=True)
+    
+    return Response({'bookedSeats': list(booked_seat_ids)}, status=status.HTTP_200_OK)

@@ -26,9 +26,8 @@ router.register(r'movies', views.MovieView)
 urlpatterns = [
     path('', include(router.urls)),
     path('admin/', admin.site.urls),
-    path('api/', include(router.urls)),
-    path('api/', include("api.urls")),
-    path('api/confirm-payment/', views.confirm_payment, name='confirm_payment'),
+    path('api/', include(router.urls)),  # For auto-generated views by DRF router
+    path('api/', include('api.urls')),  # For custom API views
 
     # path('api/theatres/', views.theatre_list, name='theatre-list'),
     # path('api/showtimings/', views.show_timings_list, name='showtimings-list'),
@@ -40,4 +39,3 @@ urlpatterns = [
 
     
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-

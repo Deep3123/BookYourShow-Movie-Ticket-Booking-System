@@ -15,3 +15,18 @@ class ShowTimingSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShowTiming
         fields = '__all__'
+        
+class PaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Payment
+        fields = '__all__'  # Or list all fields explicitly if needed
+        
+
+class ConfirmPaymentSerializer(serializers.Serializer):
+    paymentIntentId = serializers.CharField()
+    amount = serializers.DecimalField(max_digits=10, decimal_places=2)
+    seats = serializers.ListField(child=serializers.CharField())
+    userInfo = serializers.DictField()
+    movieId = serializers.IntegerField()
+    theatreId = serializers.IntegerField()
+    showTimingsId = serializers.IntegerField()
